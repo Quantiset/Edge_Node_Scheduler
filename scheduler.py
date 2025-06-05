@@ -1,9 +1,15 @@
+
+# paper variables
+k_4 = 1.0
+k_5 = 1.0
+k_6 = 1.0
+
 class Request:
-    def __init__(self, id, bandwidth, memory, latency):
-        self.id = id
-        self.bandwidth = bandwidth
-        self.memory = memory
+    def __init__(self, prompt_length, output_length, latency, accuracy):
+        self.prompt_length = prompt_length
+        self.output_length = output_length
         self.latency = latency
+        self.accuracy = accuracy
 
 class SolutionNode:
     def __init__(self, requests, depth=0):
@@ -26,13 +32,12 @@ def dfs(node, depth, max_bandwidth, max_memory, max_latency):
     
     path = recover_path(node) # generating path from root to curr node -- does on each node to preserve memory w/ networking apps
     if len(path) == depth:
-        total_bandwidth = sum(req.bandwidth for req in path)
-        total_memory = sum(req.memory for req in path)
-        total_latency = max(req.latency for req in path)
-
-        # GENERAL CONDITION CHECK -- CHANGE LATER 
-        if total_bandwidth <= max_bandwidth and total_memory <= max_memory and total_latency <= max_latency:
-            return path
+        total_bandwidth = 0
+        for node in path:
+            for req in node.requests:
+                total_bandwidth += req.output_length * k_4 + req.output_length * req.output_length * k_5
+        if total_bandwidth <= max_bandwidth:
+            return node
         return None
     
     node.visited = True
@@ -52,7 +57,7 @@ def optimal_tree_search(requests, max_bandwidth, max_memory, max_latency):
             root = SolutionNode(f_d, d)
             sol = dfs(root, d, max_bandwidth, max_memory, max_latency)
             if sol:
-                return sol
+                return recover_path(sol)
     return None
 
 if __name__ == "__main__":
