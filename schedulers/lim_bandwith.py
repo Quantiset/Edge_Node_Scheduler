@@ -1,15 +1,9 @@
+import utils
 
 # paper variables
 k_4 = 1.0
 k_5 = 1.0
 k_6 = 1.0
-
-class Request:
-    def __init__(self, prompt_length, output_length, latency, accuracy):
-        self.prompt_length = prompt_length
-        self.output_length = output_length
-        self.latency = latency
-        self.accuracy = accuracy
 
 class SolutionNode:
     def __init__(self, requests, depth=0):
@@ -66,15 +60,18 @@ if __name__ == "__main__":
     max_memory = 15
     max_latency = 3
     requests = [
-        Request(id=1, bandwidth=10, memory=5, latency=2),
-        Request(id=2, bandwidth=20, memory=10, latency=1),
-        Request(id=3, bandwidth=15, memory=8, latency=3),
+        Request(id=1, prompt_length=5, output_length=3, latency=1, accuracy=0.9),
+        Request(id=2, prompt_length=4, output_length=2, latency=2, accuracy=0.85),
+        Request(id=3, prompt_length=6, output_length=4, latency=1, accuracy=0.95),
+        Request(id=4, prompt_length=3, output_length=1, latency=3, accuracy=0.8),
+        Request(id=5, prompt_length=7, output_length=5, latency=2, accuracy=0.9)
     ]
 
     optimal_solution = optimal_tree_search(requests, max_bandwidth, max_memory, max_latency)
     if optimal_solution:
         print("Optimal Requests Selected:")
         for req in optimal_solution:
-            print(f"Request ID: {req.id}, Bandwidth: {req.bandwidth}, Memory: {req.memory}, Latency: {req.latency}")
+            print(f"Request ID: {req.id}, Prompt Length: {req.prompt_length}, Output Length: {req.output_length}, Latency: {req.latency}, Accuracy: {req.accuracy}")
+        print(f"Total Requests: {len(optimal_solution)}")
     else:
         print("No valid solution found.")
