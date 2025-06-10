@@ -1,10 +1,5 @@
 import utils
 
-# paper variables
-k_4 = 1.0
-k_5 = 1.0
-k_6 = 1.0
-
 class SolutionNode:
     def __init__(self, requests, depth=0):
         self.requests = requests
