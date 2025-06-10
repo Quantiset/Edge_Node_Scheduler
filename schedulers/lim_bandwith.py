@@ -1,4 +1,4 @@
-import utils
+from utils import *
 
 class SolutionNode:
     def __init__(self, requests, depth=0):

@@ -1,4 +1,6 @@
-from utils import *
+
+if __name__ == "__main__":
+    from utils import *
 
 class AVLNode:
     def __init__(self, key):

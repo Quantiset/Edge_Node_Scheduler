@@ -1,16 +1,7 @@
+
 from utils import *
 from avl import AVLTree
 import random
-
-requests: list[Request] = [
-    Request(1, 6, 10, 5, 2),
-    Request(2, 9, 8, 3, 1),
-    Request(3, 2, 12, 6, 3),
-    Request(4, 5, 7, 2, 1),
-]
-random.seed(87)  # For reproducibility
-for i in range(600):
-    requests.append(Request(i+5, random.randint(1, 100), random.randint(1, 100), random.randint(30000, 60000), random.randint(1, 100)))
 
 def is_valid(requests):
     t_min = min(req.latency for req in requests)
@@ -21,10 +12,10 @@ def is_valid(requests):
         total_bandwidth += req.get_bandwidth()
         total_output += req.output_length
         if total_bandwidth > tau_min:  
-            return False
-        if total_output > k_6:
-            return False
-    return True
+            return 0
+        # if total_output > k_6:
+        #     return 0
+    return total_bandwidth
 
 #O(n^3 log n) solution
 def paper_1_sol(reqs: list[Request]):
@@ -34,7 +25,9 @@ def paper_1_sol(reqs: list[Request]):
             f_d = reqs[:d]
             f_d.sort(key=lambda x: x.output_length, reverse=True)
             s = f_d[:z]
-            if is_valid(s):
+            bandwidth = is_valid(s)
+            if bandwidth:
+                # print(min(req.latency for req in s), bandwidth)
                 return s
 
 # O(n log^2 n) solution
@@ -42,6 +35,7 @@ def opt_sol(reqs: list[Request]):
 
     best_solution = []
     best_solution_bandwidth = 0
+    best_solution_tau_min = 0
 
     highest_output_length = 0
     output_len_tree = AVLTree()
@@ -51,6 +45,7 @@ def opt_sol(reqs: list[Request]):
     for request in reqs:
         tau_min = request.latency
         highest_output_length = max(highest_output_length, request.output_length)
+        output_len_tree.insert(request)
 
         # log N nodes w.h.p.
         if True or (request.output_length < smallest_output or request == reqs[-1]) and is_valid([request]):
@@ -66,14 +61,17 @@ def opt_sol(reqs: list[Request]):
                 else:
                     hi = mid
             
-            print()
-            # if mid != highest_output_length:
-            #     return (output_len_tree.get_all_less_than(mid))
-        
-        output_len_tree.insert(request)
+            if mid != highest_output_length:
+                total_bandwidth = output_len_tree.get_bandwidth_sum_total_less_than(Request.get_bandwidth_from_output_length(mid))
+                if total_bandwidth <= tau_min and total_bandwidth > best_solution_bandwidth:
+                    output_set = output_len_tree.get_all_less_than(mid)
+                    best_solution_bandwidth = total_bandwidth
+                    best_solution = output_set
+                    best_solution_tau_min = tau_min
     
+    # print(best_solution_tau_min, best_solution_bandwidth)
     return best_solution
 
 
-# print(paper_1_sol(requests), len(paper_1_sol(requests)))
-print(opt_sol(requests), len(opt_sol(requests)))
+# print(paper_1_sol(requests))
+# print(opt_sol(requests))
