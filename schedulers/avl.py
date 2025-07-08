@@ -10,6 +10,7 @@ class AVLNode:
         self.height = 1
         self.subtree_sum_output_length = key.output_length
         self.subtree_sum_bandwidth = key.get_bandwidth()
+        self.epoch = 0
 
 class AVLTree:
     def __init__(self):

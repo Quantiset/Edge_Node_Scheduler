@@ -21,3 +21,6 @@ class Request:
     
     def __repr__(self):
         return f"[id: {self.id}, out: {self.output_length}, latency: {self.latency}]"
+    
+    def __hash__(self):
+        return self.id
