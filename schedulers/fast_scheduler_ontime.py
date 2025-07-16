@@ -3,11 +3,13 @@ from avl import AVLTree
 import random
 import matplotlib.pyplot as plt
 
-def plot_current(reqs):
+def plot_current(reqs: list[Request]):
 
-    sizes = [a.output_length + a.output_length*a.output_length for a in reqs]
+    sizes = [a.get_bandwidth() for a in reqs]
     paper_2_times = [a.latency for a in reqs]
     epochs = [a.epoch for a in reqs]  
+
+    print(epochs)
 
     fig = plt.figure(figsize=(12, 6))
 
@@ -28,7 +30,10 @@ def plot_current(reqs):
     plt.show()
 
 
-def opt_sol(reqs: list[Request]):
+def opt_sol(requs: list[Request], plot = False):
+
+    dropped_requests, dropped_set = handle_impossible_requests(requs)
+    reqs = [r for r in requs if r not in dropped_set]
 
     ret = []
     last_reqs = len(reqs) + 1
@@ -49,29 +54,26 @@ def opt_sol(reqs: list[Request]):
         best_solution = []
         best_solution_bandwidth = 0
 
-        highest_output_length = 0
-        output_len_tree = AVLTree()
+        highest_f = 0
+        tree = AVLTree()
         reqs.sort(key=lambda x: x.latency, reverse=True)
 
         smallest_output = float('inf')
-        for request in reqs:
+        for request in reqs: # up-down pass,
             tau_min = request.latency
-            highest_output_length = max(highest_output_length, request.output_length)
-            output_len_tree.insert(request)
+            highest_f = max(highest_f, request.get_bandwidth())
+            tree.insert(request)
 
-            # if request.output_length < smallest_output or request == reqs[-1]:
-            smallest_output = request.output_length
-            lo = 0
-            hi = highest_output_length + 1
+            lo, hi = 0, highest_f + 1
             while lo < hi:
                 mid = (lo + hi) // 2
-                if output_len_tree.get_bandwidth_sum_total_less_than(Request.get_bandwidth_from_output_length(mid)) < tau_min:
+                if tree.get_bandwidth_sum_total_less_than(mid) < tau_min:
                     lo = mid + 1
                 else:
                     hi = mid
 
-            total_bandwidth = output_len_tree.get_bandwidth_sum_total_less_than(Request.get_bandwidth_from_output_length(mid-1))
-            output_set = output_len_tree.get_all_less_than(mid)
+            total_bandwidth = tree.get_bandwidth_sum_total_less_than(mid-1)
+            output_set = tree.get_all_less_than(mid)
             if total_bandwidth <= tau_min and len(output_set) > len(best_solution):
                 best_solution_bandwidth = total_bandwidth
                 best_solution = output_set
@@ -82,21 +84,23 @@ def opt_sol(reqs: list[Request]):
             ret.append(request)
         best_solution_set = set(best_solution)
         reqs = [r for r in reqs if r not in best_solution_set]
-        
+    
+    for elem in dropped_set:
+        elem.epoch = ret[-1].epoch+1 if ret else 0
+        ret.append(elem)
+
+    if plot:
+        plot_current(ret)
+
     return ret
 
 
 if __name__ == "__main__":
     random.seed(87)  # For reproducibility
-    plot = []
-    for i in range(1):
-        size = 1600
-        requests = [
-            Request(i, random.randint(1, 150), random.randint(1, 150), random.randint(20000, 90000), random.randint(1, 150))
-            for i in range(size)
-        ]
-        # requests = [
-        #     Request(0, 0, 100, 90000, 1),
-        # ]
-        plot.extend(opt_sol(requests))
-    plot_current(plot)
+
+    size = 600
+    requests = [
+        Request(i, random.randint(1, 150), random.randint(1, 150), random.randint(20000, 90000), random.randint(1, 150))
+        for i in range(size)
+    ]
+    opt_sol(requests, True)

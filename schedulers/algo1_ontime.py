@@ -6,8 +6,8 @@ from algo1 import is_valid
 
 def plot_current(reqs):
 
-    print(reqs)
-    sizes = [a.output_length for a in reqs]
+    # print(reqs)
+    sizes = [a.get_bandwidth() for a in reqs]
     paper_2_times = [a.latency for a in reqs]
     epochs = [a.epoch for a in reqs]  # Assume each `a` has a `depth` attribute
 
@@ -24,13 +24,16 @@ def plot_current(reqs):
 
     plt.colorbar(scatter, label='Depth')  # adds a color legend
     plt.title("Prompts Scheduling with number of epochs")
-    plt.xlabel("Output Length")
+    plt.xlabel("f")
     plt.ylabel("Latency")
     plt.grid(True)
     plt.show()
 
 
-def opt_sol(reqs: list[Request]):
+def paper_1_sol(requs: list[Request], plot=False):
+
+    dropped_requests, dropped_set = handle_impossible_requests(requs)
+    reqs = [r for r in requs if r not in dropped_set]
 
     ret = []
     last_reqs = len(reqs) + 1
@@ -54,12 +57,15 @@ def opt_sol(reqs: list[Request]):
         reqs.sort(key=lambda x: x.latency, reverse=True)
         for z in range(len(reqs), 0, -1):
             for d in range(z, len(reqs) + 1):
-                f_d = reqs[:d]
-                f_d.sort(key=lambda x: x.output_length, reverse=True)
-                s = f_d[:z]
-                bandwidth = is_valid(s)
-                if bandwidth and len(s) > len(best_solution):
-                    best_solution = s
+                f_d = reqs[:d-1] 
+                f_d.sort(key=lambda x: x.output_length)
+
+                subset = f_d[:z-1]
+                dth_request = reqs[d-1]
+                candidate = subset + [dth_request]
+
+                if is_valid(candidate) and len(candidate) > len(best_solution):
+                    best_solution = candidate
 
         for request in best_solution:
             request.epoch = i
@@ -67,14 +73,21 @@ def opt_sol(reqs: list[Request]):
         best_solution_set = set(best_solution)
         reqs = [r for r in reqs if r not in best_solution_set]
         
-    plot_current(ret)
+    for elem in dropped_set:
+        elem.epoch = ret[-1].epoch+1 if ret else 0
+        ret.append(elem)
+
+    if plot:
+        plot_current(ret)
+
+    return ret
 
 
 if __name__ == "__main__":
-    random.seed(87)  # For reproducibility
-    size = 600
+    random.seed(87)  # For reproducibility 
+    size = 500
     requests = [
         Request(i, random.randint(1, 150), random.randint(1, 150), random.randint(20000, 90000), random.randint(1, 150))
         for i in range(size)
     ]
-    opt_sol(requests)
+    paper_1_sol(requests, True)
